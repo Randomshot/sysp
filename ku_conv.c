@@ -114,7 +114,7 @@ void sendMsg1(int mqdes, int **matrix, int size){
 	int i,j;
 	size_t buf_len;
 	msg.matrix = mallocMatrix(3);
-	buf_len = 36;
+	buf_len = 8;
 	for(i=0; i<(size-2)*(size-2); i++){
 	  	msg.id = i+1;
             	msg.matrix = divideMatrix(matrix,size,i);
@@ -133,7 +133,7 @@ pid_t* rcvMsg1(int mqdes, int size){
   } mymsg;
   Msg msg;
   int tmp = 0;
-  size_t buf_len = 36; 
+  size_t buf_len = 8; 
   pid_t* pid;
 
   key_t ipckey1;
@@ -243,7 +243,8 @@ void sendMsg2(int **matrix, int size){
            perror("msgget()");
            exit(0);
    	}
-	buf_len = 4 * (size-2)*(size-2);
+	buf_len = 8;
+	//buf_len = 4 * (size-2)*(size-2);
 	for(i=0; i<((size-2)*(size-2))/4; i++){
 	  	msg.id = i+1;
 		msg.matrix = dividePooling(matrix,size,i);
@@ -266,7 +267,7 @@ int* rcvMsg2(int size){
   } mymsg;
   Msg msg;
   int tmp = 0;
-  size_t buf_len = 4 * (size-2)*(size-2); 
+  size_t buf_len =8 /*4 * (size-2)*(size-2)*/; 
   pid_t* pid;
 
   key_t ipckey1;
