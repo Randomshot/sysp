@@ -15,6 +15,7 @@ void makeMatrix(int **matrix, int X, int Y);
 void showMatrix(int **matrix, int size);
 int **divideMatrix(int **matrix, int size, int index);
 
+void sndMsg(int mqdes, int **matrix, int size);
 void sendMsg1(int mqdes, int **matrix, int size);
 pid_t* rcvMsg1(int mqdes, int size);
 int **rcvConv(int *pid, int size);
@@ -52,25 +53,11 @@ int main(int argc, char** argv){
         exit(0);
     }
 
-    //printf("send msg\n");
-    sendMsg1(mqdes,firstMatrix,size);
-    pid1 = rcvMsg1(mqdes, size);   
-    
-    //printf("rcvConv\n");
-    conv = rcvConv(pid1,size); 
-    //printf("convolution matrix\n");
-    //showMatrix(conv,(size-2));
-    sendMsg2(conv,size);
-    pid2 = rcvMsg2(size);
-    result = rcvPooling(pid2,size);
-    for(int r =0; r<(size-2)*(size-2)/4; r++){
-    	printf("%d ",result[r]);
-    }
-    printf("\n");
-   
+    sndMsg(mqdes,firstMatrix,size);
     return 0;
 
 }
+
 
 void showMatrix(int **matrix,int size){
 	for(int i = 0; i<size; i++){
@@ -107,21 +94,339 @@ int** divideMatrix(int **matrix, int size, int index){
 	return tmp;
 }
 
+void sndMsg(int mqdes, int **matrix, int size){
+	pid_t *pid, *pid1;
+	pid_t wpid;
+	Msg msg;
+	key_t ipckey1;
+  	int mqdes1;
+	 struct {
+        	long id;
+        	int value;
+  	} mymsg;
+	Msg rcv;
+	int i,j,tmp,child_status;
+	size_t buf_len = 8;
+	int **result;
+	int *rs;
+	rs = (int *)malloc(sizeof(int)*(size-2)*(size-2)/4);
+	result = mallocMatrix(size-2);
+	rcv.matrix = mallocMatrix(3);
+	msg.matrix = mallocMatrix(3);
+	pid = (pid_t *)malloc(sizeof(pid_t) * (size-2) * (size-2));
+	pid1 = (pid_t *)malloc(sizeof(pid_t) * (size-2) * (size-2)/4);
+	i=0;
+	j=0;
+	tmp = 0;
+	while(1){
+	  	//printf("i : %d j : %d\n",i,j);
+		if(i == (size-2)*(size-2)) break;
+		if(j < 4){
+			msg.id = i+1;
+			msg.matrix = divideMatrix(matrix,size,i);
+			if(msgsnd(mqdes,&msg,buf_len,1) == -1){
+				perror("msgsnd()");
+				exit(0);
+			}
+			i++;
+			j++;
+		}
+		 if(j == 4){
+			for(int x=0; x<4; x++){
+			
+		   		if((pid[i+x] = fork()) == 0){
+			
+					if(msgrcv(mqdes,&rcv,buf_len,0,0) == -1){
+						perror("msgrcv()");
+						exit(0);
+					}
+					else{
+					  	for(int y = 0; y<3; y++){
+							for(int z = 0; z<3; z++){
+								if(y == 1 && z==1){
+									tmp += 8 * rcv.matrix[y][z];
+								}
+								else{
+									tmp -= rcv.matrix[y][z];
+								}
+							}
+						}
+					  	ipckey1 = ftok("./",2000);
+                				mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
+                				buf_len = 8;
+						if(mqdes1 < 0){
+                    					perror("msgget()");
+                    					exit(0);
+            					   }
+						mymsg.id = rcv.id;
+						mymsg.value = tmp;
+						if(msgsnd(mqdes1,&mymsg,buf_len,1) == -1){
+							perror("msgnsd()");
+							exit(0);
+						}
+
+						exit(0);
+					}
+				}
+				else{
+					wpid = wait(&child_status);			
+					ipckey1 = ftok("./",2000);
+                				mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
+                				buf_len = 8;
+						if(mqdes1 < 0){
+                    					perror("msgget()");
+                    					exit(0);
+            					   }
+						if(msgrcv(mqdes1,&mymsg,buf_len,0,0) == -1){
+							perror("msgrcv()");
+							exit(0);
+						}
+						else{
+						  	mymsg.id -= 1;
+						  	result[mymsg.id/(size-2)][mymsg.id%(size-2)] = mymsg.value;
+							//printf("id : %ld %d\n",mymsg.id,mymsg.value);
+						}
+
+
+				}
+			}
+
+		  	j = 0;
+		}
+	}
+
+	//showMatrix(result,(size-2));
+	i=0;
+	j=0;
+
+	if(size == 4){
+			
+			ipckey1 = ftok("./",2001);
+  			mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
+                	buf_len = 8;
+			if(mqdes1 < 0){
+                  		perror("msgget()");
+                    		exit(0);
+                	}
+			msg.id = 1;
+			msg.matrix = result;
+			if(msgsnd(mqdes1,&msg,buf_len,1) == -1){
+				perror("msgnsd()");
+				exit(0);
+			}
+
+			
+		if((pid1[0] = fork()) == 0){
+		  tmp = 0;
+			ipckey1 = ftok("./",2001);
+  			mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
+                	buf_len = 8;
+			if(mqdes1 < 0){
+                  		perror("msgget()");
+                    		exit(0);
+                	}
+			if(msgrcv(mqdes1,&msg,buf_len,0,0) == -1){
+				perror("msgrcv()");
+				exit(0);
+			}
+			else{
+				for(int x = 0; x <2; x++){
+					for(int y = 0; y<2; y++){
+						if(x == 0 && y == 0){
+							tmp = msg.matrix[x][y];
+						}	
+						else{
+							if(msg.matrix[x][y] > tmp){
+								tmp = msg.matrix[x][y];
+							}	
+							}
+					}
+				}
+				ipckey1 = ftok("./",2002);
+  				mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
+                		buf_len = 8;
+				if(mqdes1 < 0){
+                  			perror("msgget()");
+                    			exit(0);
+                		}
+				mymsg.id = 1;
+				mymsg.value = tmp;
+				if(msgsnd(mqdes1,&mymsg,buf_len,1) == -1){
+						perror("msgnsd()");
+						exit(0);
+				}
+
+			}
+			exit(0);
+		}
+		else{
+
+			wpid = wait(&child_status);			
+			ipckey1 = ftok("./",2002);
+  			mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
+                	buf_len = 8;
+			if(mqdes1 < 0){
+                  		perror("msgget()");
+                    		exit(0);
+                	}
+			if(msgrcv(mqdes1,&mymsg,buf_len,0,0) == -1){
+				perror("msgrcv()");
+				exit(0);
+			}
+			printf("%d\n",mymsg.value);
+
+
+		}
+
+	}
+	else{
+
+	  i=0;
+	  j=0;
+	while(1){
+	  	//printf("i : %d j : %d\n",i,j);
+		if(i == (size-2)*(size-2)/4) break;
+		if(j < 4){
+			ipckey1 = ftok("./",2001);
+                	mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
+                	buf_len = 8;
+			if(mqdes1 < 0){
+                    		perror("msgget()");
+                    		exit(0);
+            		  }
+			//showMatrix(result,4);
+			msg.id = i+1;
+			msg.matrix = dividePooling(result,size,i);
+			//showMatrix(msg.matrix,(size-2)/2);
+			if(msgsnd(mqdes1,&msg,buf_len,1) == -1){
+				perror("msgsnd()");
+				exit(0);
+			}
+			i++;
+			j++;
+		}
+		 if(j == 4 || i == (size-2)*(size-2)/4){
+			for(int x=0; x<j; x++){
+				ipckey1 = ftok("./",2001);
+                				mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
+                				buf_len = 8;
+						if(mqdes1 < 0){
+                    					perror("msgget()");
+                    					exit(0);
+            					   }
+		   		if((pid1[i+x] = fork()) == 0){
+			
+					if(msgrcv(mqdes1,&rcv,buf_len,0,0) == -1){
+						perror("msgrcv()");
+						exit(0);
+					}
+					else{
+					  	
+					  	ipckey1 = ftok("./",2002);
+                				mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
+                				buf_len = 8;
+						if(mqdes1 < 0){
+                    					perror("msgget()");
+                    					exit(0);
+            					   }
+						mymsg.id = rcv.id;
+						for(int a = 0; a <2; a++){
+							for(int b = 0; b<2; b++){
+								if(a == 0 && b == 0){
+									tmp = rcv.matrix[a][b];
+								}	
+								else{
+									if(rcv.matrix[a][b] > tmp){
+										tmp = rcv.matrix[a][b];
+									}	
+								}
+							}
+						}
+
+						mymsg.value = tmp;
+						//printf("%d\n",tmp);
+						if(msgsnd(mqdes1,&mymsg,buf_len,1) == -1){
+							perror("msgnsd()");
+							exit(0);
+						}
+
+						exit(0);
+					}
+				}
+				else{
+					//wpid = wait(&child_status);			
+						ipckey1 = ftok("./",2002);
+                				mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
+                				buf_len = 8;
+						if(mqdes1 < 0){
+                    					perror("msgget()");
+                    					exit(0);
+            					   }
+						if(msgrcv(mqdes1,&mymsg,buf_len,0,0) == -1){
+							perror("msgrcv()");
+							exit(0);
+						}
+						else{
+							rs[mymsg.id-1] = mymsg.value;
+						}
+
+
+				}
+			}
+
+		  	j = 0;
+		}
+	}
+	
+	for(int x=0; x<(size-2)*(size-2)/4; x++){
+		printf("%d ",rs[x]);
+	}
+	printf("\n");
+	}
+
+	
+}
 void sendMsg1(int mqdes, int **matrix, int size){
 	
    
+  	pid_t *pid;
   	Msg msg;
+	Msg rcv;
 	int i,j;
 	size_t buf_len;
+	rcv.matrix = mallocMatrix(3);
 	msg.matrix = mallocMatrix(3);
 	buf_len = 8;
+	pid = (pid_t *)malloc(sizeof(pid_t) * (size-2) * (size-2));
 	for(i=0; i<(size-2)*(size-2); i++){
-	  	msg.id = i+1;
-            	msg.matrix = divideMatrix(matrix,size,i);
-		if(msgsnd(mqdes,&msg,buf_len,1) == -1){
-                	perror("msgsnd()");
-                	exit(0);
-            	}
+	  	if((pid[i] = fork()) != 0){
+			
+	  		msg.id = i+1;
+            		msg.matrix = divideMatrix(matrix,size,i);
+			if(msgsnd(mqdes,&msg,buf_len,1) == -1){
+                		perror("msgsnd()");
+                		exit(0);
+            		}
+			else{
+				printf("---snd---\n%d\n",msg.matrix[0][0]);
+			}
+
+
+		}
+		else if(pid[i] == 0){
+		
+		  /*
+		  if(msgrcv(mqdes,&rcv,buf_len,0,0) == -1){
+		  	perror("msgrcv()");
+			exit(0);
+		  }
+		  else{
+		    	printf("---rcv---\n%d\n",rcv.matrix[0][0]);
+		  	//printf("%ld : %ld\n",msg.id,sizeof(msg.id));
+			exit(0);
+		  }*/
+		}
+		else exit(0);
 		
     	}
 }
@@ -133,7 +438,7 @@ pid_t* rcvMsg1(int mqdes, int size){
   } mymsg;
   Msg msg;
   int tmp = 0;
-  size_t buf_len = 8; 
+  size_t buf_len = 36; 
   pid_t* pid;
 
   key_t ipckey1;
@@ -243,8 +548,7 @@ void sendMsg2(int **matrix, int size){
            perror("msgget()");
            exit(0);
    	}
-	buf_len = 8;
-	//buf_len = 4 * (size-2)*(size-2);
+	buf_len = 4 * (size-2)*(size-2);
 	for(i=0; i<((size-2)*(size-2))/4; i++){
 	  	msg.id = i+1;
 		msg.matrix = dividePooling(matrix,size,i);
@@ -267,7 +571,7 @@ int* rcvMsg2(int size){
   } mymsg;
   Msg msg;
   int tmp = 0;
-  size_t buf_len =8 /*4 * (size-2)*(size-2)*/; 
+  size_t buf_len = 4 * (size-2)*(size-2); 
   pid_t* pid;
 
   key_t ipckey1;
