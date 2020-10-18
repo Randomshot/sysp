@@ -119,7 +119,6 @@ void sndMsg(int mqdes, int **matrix, int size){
 	j=0;
 	tmp = 0;
 	while(1){
-	  	//printf("i : %d j : %d\n",i,j);
 		if(i == (size-2)*(size-2)) break;
 		if(j < 4){
 			msg.id = i+1;
@@ -195,94 +194,10 @@ void sndMsg(int mqdes, int **matrix, int size){
 		}
 	}
 
-	//showMatrix(result,(size-2));
+
 	i=0;
 	j=0;
-
-	if(size == 4){
-			
-			ipckey1 = ftok("./",2001);
-  			mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
-                	buf_len = 8;
-			if(mqdes1 < 0){
-                  		perror("msgget()");
-                    		exit(0);
-                	}
-			msg.id = 1;
-			msg.matrix = result;
-			if(msgsnd(mqdes1,&msg,buf_len,1) == -1){
-				perror("msgnsd()");
-				exit(0);
-			}
-
-			
-		if((pid1[0] = fork()) == 0){
-		  tmp = 0;
-			ipckey1 = ftok("./",2001);
-  			mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
-                	buf_len = 8;
-			if(mqdes1 < 0){
-                  		perror("msgget()");
-                    		exit(0);
-                	}
-			if(msgrcv(mqdes1,&msg,buf_len,0,0) == -1){
-				perror("msgrcv()");
-				exit(0);
-			}
-			else{
-				for(int x = 0; x <2; x++){
-					for(int y = 0; y<2; y++){
-						if(x == 0 && y == 0){
-							tmp = msg.matrix[x][y];
-						}	
-						else{
-							if(msg.matrix[x][y] > tmp){
-								tmp = msg.matrix[x][y];
-							}	
-							}
-					}
-				}
-				ipckey1 = ftok("./",2002);
-  				mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
-                		buf_len = 8;
-				if(mqdes1 < 0){
-                  			perror("msgget()");
-                    			exit(0);
-                		}
-				mymsg.id = 1;
-				mymsg.value = tmp;
-				if(msgsnd(mqdes1,&mymsg,buf_len,1) == -1){
-						perror("msgnsd()");
-						exit(0);
-				}
-
-			}
-			exit(0);
-		}
-		else{
-
-			wpid = wait(&child_status);			
-			ipckey1 = ftok("./",2002);
-  			mqdes1 = msgget(ipckey1, IPC_CREAT|0600);
-                	buf_len = 8;
-			if(mqdes1 < 0){
-                  		perror("msgget()");
-                    		exit(0);
-                	}
-			if(msgrcv(mqdes1,&mymsg,buf_len,0,0) == -1){
-				perror("msgrcv()");
-				exit(0);
-			}
-			printf("%d\n",mymsg.value);
-
-
-		}
-
-	}
-	else{
-
-	  i=0;
-	  j=0;
+	
 	while(1){
 	  	//printf("i : %d j : %d\n",i,j);
 		if(i == (size-2)*(size-2)/4) break;
@@ -382,7 +297,6 @@ void sndMsg(int mqdes, int **matrix, int size){
 		printf("%d ",rs[x]);
 	}
 	printf("\n");
-	}
 
 	
 }
