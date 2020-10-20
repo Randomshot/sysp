@@ -266,6 +266,7 @@ int *maxPooling(int mqdes1, int mqdes2, int **result, int size){
 					}
 				}
 				else{
+						wpid = wait(&child_status);			
 						if(msgrcv(mqdes2,&mymsg,buf_len,0,0) == -1){
 							perror("msgrcv()");
 							exit(0);
