@@ -67,7 +67,18 @@ int main(int argc, char** argv){
     conv = convMatrix(mqdes1,mqdes2,firstMatrix,size); 
     result = maxPooling(mqdes3,mqdes4,conv,size);
     printResult(result,size); 
+    
+    free(firstMatrix);
+    free(conv);
+    free(result);
+
+    msgctl(mqdes1,IPC_RMID,0);
+    msgctl(mqdes2,IPC_RMID,0);
+    msgctl(mqdes3,IPC_RMID,0);
+    msgctl(mqdes4,IPC_RMID,0);
     return 0;
+
+
 
 }
 
@@ -180,6 +191,9 @@ int **convMatrix(int mqdes1,int mqdes2, int **matrix,int size){
 							perror("msgnsd()");
 							exit(0);
 						}
+						else{
+							free(msg.matrix);
+						}
 						exit(0);
 					}
 				}
@@ -202,6 +216,7 @@ int **convMatrix(int mqdes1,int mqdes2, int **matrix,int size){
 		}
 	}
 
+	free(pid);
 	return result;
 }
 
@@ -261,7 +276,9 @@ int *maxPooling(int mqdes1, int mqdes2, int **result, int size){
 							perror("msgnsd()");
 							exit(0);
 						}
-
+						else{
+							free(msg.matrix);
+						}
 						exit(0);
 					}
 				}
@@ -283,5 +300,6 @@ int *maxPooling(int mqdes1, int mqdes2, int **result, int size){
 		}
 	}
 
+	free(pid);
 	return rs;
 }
