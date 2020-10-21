@@ -20,6 +20,7 @@ int** mallocMatrix( int size);
 void makeMatrix(int **matrix, int X, int Y);
 void showMatrix(int **matrix, int size);
 int **divideMatrix(int **matrix, int size, int index);
+int** dividePooling(int **matrix, int size, int index);
 int **convMatrix(int mqdes1,int mqdes2, int **matrix,int size);
 int *maxPooling(int mqdes1, int mqdes2, int **result, int size);
 void printResult(int *result, int size);
