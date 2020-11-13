@@ -4,21 +4,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/types.h>
-
-//#include <sys/wait.h>
-//#include <sys/ipc.h>
-//#include <sys/msg.h>
 #include <pthread.h>
-
-typedef struct {
-        long id;
-        int** matrix;
-} Msg;
-
-typedef struct{
-	long id;
-	int value;
-} Mymsg;
 
 typedef struct{
   	int size;
