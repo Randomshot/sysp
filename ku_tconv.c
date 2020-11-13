@@ -194,6 +194,8 @@ int writeResult(int **result, int resultSize, char* outputName){
 
 			write(fd,enter,strlen(enter));
 		}
+
+			write(fd,enter,strlen(enter));
 	}
 	else{
 		printf("file open failed");
