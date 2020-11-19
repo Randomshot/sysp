@@ -20,10 +20,9 @@ int writeResult(int **result, int resultSize, char *outputName);
 
 int** dividePooling(int **matrix, int size, int index);
 int** mallocMatrix( int size);
-void makeMatrix(int **matrix, int X, int Y);
+//void makeMatrix(int **matrix, int X, int Y);
 void showMatrix(int **matrix, int size);
 int **divideMatrix(int **matrix, int size, int index);
-void printResult(int *result, int size);
 
 int main(int argc, char** argv){
    
@@ -378,15 +377,6 @@ void showMatrix(int **matrix,int size){
 
 }
 
-void printResult(int *result, int size){
-	
-  	for(int x = 0; x<(size-2)*(size-2)/4; x++){
-		printf("%d",result[x]);
-		if(x< -1 +(size-2)*(size-2)/4){
-			printf(" ");
-		}
-	}
-}
 int** mallocMatrix(int size){
 	int** matrix;
     	matrix = (int **)malloc(sizeof(int *) * size);
