@@ -20,17 +20,14 @@ int writeResult(int **result, int resultSize, char *outputName);
 
 int** dividePooling(int **matrix, int size, int index);
 int** mallocMatrix( int size);
-//void makeMatrix(int **matrix, int X, int Y);
 void showMatrix(int **matrix, int size);
 int **divideMatrix(int **matrix, int size, int index);
 
 int main(int argc, char** argv){
    
-    //int size = atoi(argv [1]);
     int size;
     char *inputName = argv[1];
     char *outputName = argv[2];
-    //int** firstMatrix;
     int **convolution; 
     int **result;
     MData input;
@@ -39,14 +36,8 @@ int main(int argc, char** argv){
 
     input = readInput(inputName);
     size = input.size;
-    //showMatrix(input.matrix,input.size);
-    
-    //firstMatrix = mallocMatrix(size);
-    //makeMatrix(firstMatrix,size,size);
     convolution = conv(input.matrix,size);
-    //showMatrix(convolution, size-2);
     result = max(convolution,size);
-    //showMatrix(result,(size-2)/2);
     writeResult(result,size,outputName);
 	
     free(input.matrix);
@@ -80,8 +71,6 @@ MData readInput(char *inputName){
 		if(buf[0] == 10) break;
 		else sizeLength++;
 	}
-	//printf("sizeLength = %d\n",sizeLength);
-	//printf("%s\n",matrixSize);
 	lseek(fd,SEEK_SET,0);
 
   	matrixSize = (char*)malloc(sizeof(char)*sizeLength);
@@ -97,20 +86,14 @@ MData readInput(char *inputName){
 		for(int j=0; j<size; j++){
 			read(fd,value,2);
 			
-			//printf("%s\n",value);
-			/*if(value[0] == ' '){
-				printf("space\n");
-			}*/
-			//printf("%d\n",value[1]-'0');
 			
 			if((value[0] == ' ')){
 			  	tmp = value[1] - '0';
-				//printf("%d\n",tmp);
 				result.matrix[i][j] = tmp; 
 			}
 			else{
 				tmp = (value[0] - '0')*10 + (value[1]-'0');
-				result.matrix[j][j] = tmp;
+				result.matrix[i][j] = tmp;
 			}
 			lseek(fd,1,SEEK_CUR);
 		}
@@ -125,7 +108,6 @@ MData readInput(char *inputName){
   close(fd);
   free(matrixSize);
   free(buf);
-  //showMatrix(result.matrix,size);
   return result;
 
 }
@@ -245,35 +227,6 @@ int **conv(int **matrix, int size){
 		}
 	}
 
-	/*
-	for(int i = 0; i<(size-2)*(size-2); i++){
-	  	//printf("i : %d\n",i);
-		
-		tmp = divideMatrix(matrix,size,i);
-		status = pthread_create(&thread_id[i],NULL,convM,(void *)tmp);
-		if(status != 0){
-			perror("pthread_create");
-			exit(1);
-		}
-	
-		status = pthread_join(thread_id[i],(void *)&maxPoolingValue);
-		if(status != 0){
-			perror("pthread_join");
-			exit(1);
-		}
-		result[i/((size-2)/2)][i%((size-2)/2)] = maxPoolingValue;
-	}
-	for(int i =0; i<(size-2)*(size-2); i++){
-		
-		status = pthread_join(thread_id[i],(void *)&convValue);
-		printf("%d\n",convValue);
-		if(status != 0){
-			perror("pthread_join");
-			exit(1);
-		}
-		result[i/(size-2)][i%(size-2)] = convValue;
-	}
-	*/
 
 	return result;
 }
@@ -288,7 +241,6 @@ void *convM(void *arg){
 		}
 	}
 
-	//printf("result : %d\n",result);
 	return (void *)(result);
 
 }
@@ -326,28 +278,6 @@ int **max(int **matrix, int size){
 			result[i][j] = maxPoolingValue[j+i*(size-2)/2];
 		}
 	}
-	/*
-	for(int i = 0; i<(size-2)*(size-2)/4; i++){
-	  	//printf("i : %d\n",i);
-		
-		tmp = dividePooling(matrix,size,i);
-		status = pthread_create(&thread_id[i],NULL,maxM,(void *)tmp);
-		if(status != 0){
-			perror("pthread_create");
-			exit(1);
-		}
-	
-	}
-
-	for(int i =0; i<(size-2)*(size-2)/4; i++){
-		
-		status = pthread_join(thread_id[i],(void *)&maxPoolingValue);
-		if(status != 0){
-			perror("pthread_join");
-			exit(1);
-		}
-		result[i/((size-2)/2)][i%((size-2)/2)] = maxPoolingValue;
-	}*/
 	return result;
 }
 
@@ -364,7 +294,6 @@ void *maxM(void *arg){
 			}
 		}
 	}
-	//printf("result : %d\n",result);
 	return (void *)(result);
 }
 void showMatrix(int **matrix,int size){
