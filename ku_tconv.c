@@ -57,7 +57,7 @@ MData readInput(char *inputName){
 		if(buf[0] == 10) break;
 		else sizeLength++;
 	}
-	lseek(fd,SEEK_SET,0);
+	lseek(fd,0,SEEK_SET);
   	matrixSize = (char*)malloc(sizeof(char)*sizeLength);
 	read(fd,matrixSize,sizeLength);
 	size = atoi(matrixSize);
